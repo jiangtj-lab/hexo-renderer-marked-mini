@@ -28,6 +28,7 @@
     "eslint": "^7.8.1",
     "eslint-config-hexo": "^4.1.0",
     "hexo": "^5.1.1",
+    "hexo-util": "^2.4.0",
     "mocha": "^8.1.3"
   }
 }

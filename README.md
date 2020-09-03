@@ -1,6 +1,6 @@
 # hexo-renderer-marked-mini
 
-Yet another [marked] renderer for hexo with zero configuration.
+Yet another [marked](https://github.com/markedjs/marked) renderer for hexo with zero configuration.
 
 ## Installation
 
