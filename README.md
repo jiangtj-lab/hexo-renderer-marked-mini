@@ -1,5 +1,7 @@
 # hexo-renderer-marked-mini
 
+[![NPM version](https://badge.fury.io/js/hexo-renderer-marked-mini.svg)](https://www.npmjs.com/package/hexo-renderer-marked-mini)
+
 Yet another [marked](https://github.com/markedjs/marked) renderer for hexo with zero configuration.
 
 ## Installation
