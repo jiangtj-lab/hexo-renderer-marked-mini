@@ -321,17 +321,6 @@ describe('Marked renderer', () => {
 
   // marked sanitize is deprecated
   describe.skip('sanitizeUrl option tests', () => {
-    const hexo = new Hexo(__dirname, {silent: true});
-    const ctx = Object.assign(hexo, {
-      config: {
-        marked: {
-          sanitizeUrl: true
-        }
-      }
-    });
-
-    const renderer = require('../lib/renderer');
-
     const body = [
       '[script](javascript:foo)',
       '',
@@ -339,7 +328,7 @@ describe('Marked renderer', () => {
     ].join('\n');
 
     it('sanitizeUrl enabled', () => {
-      const r = renderer.bind(ctx);
+      hexo.config.marked.sanitizeUrl = true;
       const result = r({text: body});
 
       result.should.eql([
@@ -349,8 +338,7 @@ describe('Marked renderer', () => {
     });
 
     it('sanitizeUrl disabled', () => {
-      ctx.config.marked.sanitizeUrl = false;
-      const r = renderer.bind(ctx);
+      hexo.config.marked.sanitizeUrl = false;
       const result = r({text: body});
 
       result.should.eql([
@@ -784,10 +772,10 @@ describe('Marked renderer', () => {
   });
 
   describe('exec filter to extend', () => {
-    it('should execute filter registered to marked:renderer', () => {
-      const hexo = new Hexo(__dirname, {silent: true});
-      hexo.config.marked = {};
+    const hexo = new Hexo(__dirname, {silent: true});
+    hexo.config.marked = {};
 
+    it('should execute filter registered to marked:renderer', () => {
       hexo.extend.filter.register('marked:renderer', renderer => {
         renderer.image = function(href, title, text) {
           return `<img data-src="${encodeURL(href)}">`;
@@ -810,6 +798,56 @@ describe('Marked renderer', () => {
         `<p><img data-src="${encodeURL(urlA)}">`,
         `<img data-src="${encodeURL(urlB)}"></p>\n`
       ].join('\n'));
+    });
+
+    it('should execute filter registered to marked:renderer', () => {
+      const smartypants = str => {
+        return str.replace(/---/g, '\u2014');
+      };
+
+      hexo.extend.filter.register('marked:tokenizer', tokenizer => {
+        tokenizer.inlineText = function(src) {
+          return {
+            type: 'text',
+            raw: src,
+            text: smartypants(src)
+          };
+        };
+      });
+
+      const body = '"---"';
+
+      const r = require('../lib/renderer').bind(hexo);
+
+      const result = r({text: body});
+      result.should.eql(`<p>${smartypants(body)}</p>\n`);
+    });
+  });
+
+  describe('nunjucks', () => {
+    const hexo = new Hexo(__dirname, { silent: true });
+    const loremFn = () => { return 'ipsum'; };
+    const engine = 'md';
+
+    before(async () => {
+      await hexo.init();
+      hexo.extend.tag.register('lorem', loremFn);
+      hexo.extend.renderer.register('md', 'html', require('../lib/renderer'));
+    });
+
+    beforeEach(() => { hexo.config.marked = {}; });
+
+    it('default', async () => {
+      const result = await hexo.post.render(null, { content: '**foo** {% lorem %}', engine });
+      result.content.should.eql('<p><strong>foo</strong> ipsum</p>\n');
+    });
+
+    it('enable disableNunjucks', async () => {
+      const renderer = hexo.render.renderer.get('md');
+      renderer.disableNunjucks = true;
+      hexo.extend.renderer.register('md', 'html', renderer);
+      const result = await hexo.post.render(null, { content: '**foo** {% lorem %}', engine });
+      result.content.should.eql('<p><strong>foo</strong> {% lorem %}</p>\n');
     });
   });
 });
